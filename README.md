@@ -10,10 +10,10 @@ For more details, please refer to Convertdate's Readme.
 Usage and syntax:
 
   - To summon the Bot, make a comment in any post in one of the monitored subs, with 1 line starting with "!dateconv" (no quotes).
-  - The syntax is:
-    !dateconv _fromCalendar_ _toCalendar_ **YEAR.MONTH.DAY**
-    or 
-    !dateconv **today** _toCalendar_
+  - The syntax is:  
+    !dateconv _fromCalendar_ _toCalendar_ **YEAR.MONTH.DAY**  
+    or   
+    !dateconv **today** _toCalendar_  
 
 Monitored Subreddits:
   - [r/translator](https://old.reddit.com/r/translator)
