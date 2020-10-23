@@ -2,6 +2,7 @@ import time # for sleeping
 import re # for Regular Expressions
 import praw # Python Reddit API Wrapper (https://github.com/praw-dev/praw)
 import convertdate # date conversion library (https://github.com/fitnr/convertdate)
+from lunisolar import ChineseDate # date conversion to and from Chinese calendar
 from datetime import datetime # for today's date and seconds to date conversion
 import importlib # used to import the correct Object based on the calendar name
 import sqlite3 # lightweight serverless local database
@@ -94,6 +95,7 @@ def run_bot(r,mon_sub):
                 size = len(words)
                 if size >= 3:
                     FROM_OK = 0
+                    CHINESE_LEAP_MONTH = False
                     from_calendar = words[1]
                     to_calendar = words[2]
                     if from_calendar in ("today","now"):
@@ -117,15 +119,33 @@ def run_bot(r,mon_sub):
                                         # therefore the lookup should be with the month name (see config.py)
                                         if from_calendar == "hebrew" and part.upper() in HEBREW_MONTHS.keys():
                                             parts.append(HEBREW_MONTHS.get(part.upper()))
+                                        # In Chinese calendar there are Leap Months with the same
+                                        # number and name as the regular ones. To indicate the difference 
+                                        # we're appending a plus sign (+) after the month number
+                                        elif from_calendar == "chinese" and part.find("+") > 0:
+                                            leap_marker = part.find("+")
+                                            parts.append(int(part[0:leap_marker]))
+                                            CHINESE_LEAP_MONTH = True
+                                        #attempt to convert the lookup string into number
                                         else:
-                                            #attempt to convert the lookup string into number
                                             parts.append(int(part))
-                                    # In order to access the correct conversion functions
-                                    # use importlib to assemble the name of module
-                                    module = importlib.import_module(f"convertdate.{from_calendar}")
-                                    func = getattr(module,"to_jd")
-                                    #always convert to JulianDay
-                                    jd = func(parts[0],parts[1],parts[2])
+                                    if from_calendar == "chinese":
+                                        d = ChineseDate.from_chinese(
+                                            chinese_year = parts[0],
+                                            chinese_month = parts[1],
+                                            chinese_day = parts[2],
+                                            is_leap_month=CHINESE_LEAP_MONTH)
+                                        jd = convertdate.julianday.from_gregorian(
+                                            d.gregorian_date.year(),
+                                            d.gregorian_date.month(),
+                                            d.gregorian_date.day())
+                                    else:
+                                        # In order to access the correct conversion functions
+                                        # use importlib to assemble the name of module
+                                        module = importlib.import_module(f"convertdate.{from_calendar}")
+                                        func = getattr(module,"to_jd")
+                                        #always convert to JulianDay
+                                        jd = func(parts[0],parts[1],parts[2])
                                     FROM_OK = 1
                                 except Exception as e:
                                     logger.error("Unable to parse FROM date. Error: {}".format(str(e)))
@@ -133,21 +153,31 @@ def run_bot(r,mon_sub):
                     else:
                         logger.error("FROM command not available")
                         FROM_OK = 0
-                    
                     # only follow to the next part if we managed to get a JulianDay in the first part
                     if FROM_OK == 1 and to_calendar in AVAILABLE_CALENDARS:
                         try:
-                            #access the functions from the right module
-                            module = importlib.import_module(f"convertdate.{to_calendar}")
-                            func = getattr(module,"from_jd")
-                            #convert from the JulianDay
-                            result = func(jd)
-                            #Assemble the result
-                            if to_calendar == "hebrew":
-                                # Looking for Hebrew month names, instead of the confusing numbers
-                                s = f"Result: {result[2]} {HEBREW_RESULT.get(result[1]).title()} {result[0]}"
+                            if to_calendar == "chinese":
+                                d = convertdate.gregorian.from_jd(jd)
+                                result = ChineseDate.from_gregorian(
+                                    year=d[0],
+                                    month=d[1],
+                                    day=d[2])
+                                s = f"Result: {result.day()} {result.month()}"
+                                if result.is_leap_month():
+                                    s += "(leap)"
+                                s += f" {result.year()} ({result.show_zodiac_full()})"
                             else:
-                                s = "Result: {}".format(".".join("{0}".format(n) for n in reversed(result)))
+                                #access the functions from the right module
+                                module = importlib.import_module(f"convertdate.{to_calendar}")
+                                func = getattr(module,"from_jd")
+                                #convert from the JulianDay
+                                result = func(jd)
+                                #Assemble the result
+                                if to_calendar == "hebrew":
+                                    # Looking for Hebrew month names, instead of the confusing numbers
+                                    s = f"Result: {result[2]} {HEBREW_RESULT.get(result[1]).title()} {result[0]}"
+                                else:
+                                    s = "Result: {}".format(".".join("{0}".format(n) for n in reversed(result)))
                             logger.info(f"Replying to comment with '{s}'")
                             # Send the reply!
                             comment.reply(s)
@@ -174,7 +204,7 @@ con = sqlite3.connect(DB_FILE)
 co = 0
 # the CRONTAB is setup to call this script every 30 minutes
 # Loops through the robot 28 times, with 1 minute intervals
-while(co < 28):
+while(co < 27):
     #Login to Reddit
     r = praw.Reddit(username = secrets.username,
         password = secrets.password,

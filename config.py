@@ -9,17 +9,17 @@ LOG_FILE = HOME_PATH+"/DateConvBot.log"
 DB_FILE = HOME_PATH+"/sqlite.db"
 
 #these have the same names as the convertdate modules 
-AVAILABLE_CALENDARS = ('armenian', 'bahai', 'coptic', 'dublin',
+AVAILABLE_CALENDARS = ('armenian', 'bahai', 'chinese', 'coptic', 'dublin',
         'french_republican', 'gregorian', 'hebrew',
         'indian_civil', 'islamic', 'iso',
         'julian', 'mayan', 'persian', 'positivist')
 
 SYNTAX_TIPS = '''
 
-Syntax: !dateconv _fromCalendar_ _toCalendar_ **YYYY.MM.DD**   
-     or !dateconv today _toCalendar_ 
+Syntax: !dateconv _fromCalendar_ _toCalendar_ **YYYY.MM.DD**  
+   or !dateconv today _toCalendar_ 
 
-Available calendars
+Available calendars: 
 '''
 
 SYNTAX_TIPS += ', '.join(AVAILABLE_CALENDARS)
@@ -41,9 +41,11 @@ HEBREW_MONTHS = {
         'SHEVAT': 11,
         'ADAR': 12,
         'ADAR1': 12,
+        'ADARI': 12,
         'ADARALEF': 12,
         'VEADAR': 13,
         'ADAR2': 13,
+        'ADARII': 13,
         'ADARBET': 13,
         'NISAN': 1,
         'NISSAN': 1,
