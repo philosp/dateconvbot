@@ -162,10 +162,10 @@ def run_bot(r,mon_sub):
                                     year=d[0],
                                     month=d[1],
                                     day=d[2])
-                                s = f"Result: {result.day()} {result.month()}"
-                                if result.is_leap_month():
+                                s = f"Result: {result.day} {result.month}"
+                                if result.is_leap_month:
                                     s += "(leap)"
-                                s += f" {result.year()} ({result.show_zodiac_full()})"
+                                s += f" {result.year} ({result.show_zodiac_full()})"
                             else:
                                 #access the functions from the right module
                                 module = importlib.import_module(f"convertdate.{to_calendar}")

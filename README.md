@@ -7,7 +7,7 @@ It uses the [Convertdate](https://github.com/fitnr/convertdate) module for date 
 Note that in some calendar systems, the day begins at sundown. Convertdate gives the conversion for noon of the day in question. 
 For more details, please refer to Convertdate's Readme.
 
-New! It now uses [Lunisolar](https://github.com/yen223/lunisolar) module to convert to/from Chinese dates
+**New!** It now uses [Lunisolar](https://github.com/yen223/lunisolar) module to convert to/from Chinese dates, with [SimonHung](https://github.com/SimonHung/lunisolar)'s modifications for Python3 compatibility.
 
 ### Usage and syntax:
 _______________________________
