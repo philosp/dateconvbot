@@ -9,10 +9,10 @@ LOG_FILE = HOME_PATH+"/DateConvBot.log"
 DB_FILE = HOME_PATH+"/sqlite.db"
 
 #these have the same names as the convertdate modules 
-AVAILABLE_CALENDARS = ('armenian', 'bahai', 'chinese', 'coptic', 'dublin',
-        'french_republican', 'gregorian', 'hebrew',
-        'indian_civil', 'islamic', 'iso',
-        'julian', 'mayan', 'persian', 'positivist')
+AVAILABLE_CALENDARS = (
+        'armenian', 'armenian_sarkawag', 'bahai', 'chinese', 'coptic', 'dublin',
+        'french_republican', 'gregorian', 'hebrew', 'hebrew_en',
+        'indian_civil', 'islamic', 'iso', 'julian', 'mayan', 'persian', 'positivist')
 
 SYNTAX_TIPS = '''
 
@@ -27,7 +27,7 @@ SYNTAX_TIPS += ', '.join(AVAILABLE_CALENDARS)
 MONITORED_SUBS = ('u_DateConvBot','translator','TranslationStudies','LanguageLearning','hebrew','judaism')
 
 # Different transliterations and spellings 
-HEBREW_MONTHS = {
+HEBREW_DICT = {
         'TISHRI': 7,
         'TISHREI': 7,
         'HESHVAN': 8,
@@ -61,7 +61,7 @@ HEBREW_MONTHS = {
         'ELUL': 6
 }
 
-HEBREW_RESULT = {
+HEBREW_MONTHS_EN = {
         7: 'TISHREI',
         8: 'CHESHVAN',
         9: 'KISLEV',
@@ -75,4 +75,20 @@ HEBREW_RESULT = {
         4: 'TAMUZ',
         5: 'AV',
         6: 'ELUL'
+}
+
+HEBREW_MONTHS_HE = {
+        7: u'תשרי',
+        8: u'חשוון',
+        9: u'כסלו',
+        10: u'טבת',
+        11: u'שבט',
+        12: u'אדר',
+        13: u'אדר ב',
+        1: u'ניסן',
+        2: u'אייר',
+        3: u'סיוון',
+        4: u'תמוז',
+        5: u'אב',
+        6: u'אלול'
 }

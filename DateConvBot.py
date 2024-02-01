@@ -17,8 +17,8 @@ from config import *
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 # create a file logger
-handler = RotatingFileHandler(LOG_FILE, maxBytes=1024*1024*1, backupCount=3)
-handler.setLevel(logging.DEBUG)
+handler = RotatingFileHandler(LOG_FILE, maxBytes=1024*1024*10, backupCount=32)
+handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(funcName)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -57,6 +57,35 @@ def db_store_reply(reply):
     cur.close()
     return res
 
+
+def hebrew_format(year, month, day, lang=None):
+    """Convert a Hebrew date into a string with the format DD MONTH YYYY."""
+    from hebrew_numbers import int_to_gematria
+    if year < 1:
+        return "Not a valid year"
+    lang = lang or "en"
+    if lang[0:2] == "he" :
+        # the hebrew gematria is a string of letters that represent a number
+        # it is the traditional way to write down a date in this calendar
+        # for year numbers greater than 1000, the gematria must be split 
+        # into a millenia part, and a year part
+        str_year = ''
+        if year > 999:
+            millenia = year//1000
+            year = year - (millenia*1000)
+            if year > 0:
+                str_year += int_to_gematria(millenia)
+            else: #special representation for multiples of 1000
+                if millenia > 1:
+                    str_year += int_to_gematria(millenia-1)
+        if year > 0:
+            str_year += int_to_gematria(year)
+        else: #special representation for multiples of 1000
+            str_year += u"תת״ר"
+        return f"{int_to_gematria(day)} {HEBREW_MONTHS_HE.get(month)} {str_year}"
+    else:
+        return f"{day} {HEBREW_MONTHS_EN.get(month).title()} {year}"
+
 def run_bot(r,mon_sub):
     sub = r.subreddit(mon_sub)
     posts = []
@@ -69,10 +98,10 @@ def run_bot(r,mon_sub):
 
         #Comment already in SEEN_COMMENTS, get next one
         if db_comment_exists(comment.id):
-            logger.info(f"ID {comment.id} already exists!")
+            logger.debug(f"ID {comment.id} already exists!")
             continue
         
-        logger.debug(f"Comment id: {comment.id}, made in {datetime.fromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"Comment id: {comment.id}, made in {datetime.fromtimestamp(comment.created_utc).strftime('%Y-%m-%d %H:%M:%S')}")
         #Store the comment in SEEN_COMMENTS
         stored_id = db_store_comment((comment.id,datetime.now().strftime('%Y-%m-%d %H:%M:%S'),mon_sub))
         logger.debug(f"Stored under id: {stored_id}")
@@ -117,8 +146,8 @@ def run_bot(r,mon_sub):
                                         # the numbers assigned to months are confusing (biblical style)
                                         # making the year start in month 7 instead of 1
                                         # therefore the lookup should be with the month name (see config.py)
-                                        if from_calendar == "hebrew" and part.upper() in HEBREW_MONTHS.keys():
-                                            parts.append(HEBREW_MONTHS.get(part.upper()))
+                                        if from_calendar == "hebrew" and part.upper() in HEBREW_DICT.keys():
+                                            parts.append(HEBREW_DICT.get(part.upper()))
                                         # In Chinese calendar there are Leap Months with the same
                                         # number and name as the regular ones. To indicate the difference 
                                         # we're appending a plus sign (+) after the month number
@@ -165,7 +194,7 @@ def run_bot(r,mon_sub):
                                 s = f"Result: {result.day} {result.month}"
                                 if result.is_leap_month:
                                     s += "(leap)"
-                                s += f" {result.year} ({result.show_zodiac_full()})"
+                                s += f" {result.stem+result.branch} ({result.year})"
                             else:
                                 #access the functions from the right module
                                 module = importlib.import_module(f"convertdate.{to_calendar}")
@@ -174,10 +203,15 @@ def run_bot(r,mon_sub):
                                 result = func(jd)
                                 #Assemble the result
                                 if to_calendar == "hebrew":
-                                    # Looking for Hebrew month names, instead of the confusing numbers
-                                    s = f"Result: {result[2]} {HEBREW_RESULT.get(result[1]).title()} {result[0]}"
+                                    s = f"Result: {hebrew_format(result[0],result[1],result[2],'he')}"
+                                elif to_calendar == "hebrew_en":
+                                    s = f"Result: {hebrew_format(result[0],result[1],result[2])}"
                                 else:
-                                    s = "Result: {}".format(".".join("{0}".format(n) for n in reversed(result)))
+                                    try:
+                                        func = getattr(module,"format")
+                                        s = f"Result: {func(result[0],result[1],result[2])}"
+                                    except AttributeError as e:
+                                        s = "Result: {}".format(".".join("{0}".format(n) for n in reversed(result)))
                             logger.info(f"Replying to comment with '{s}'")
                             # Send the reply!
                             comment.reply(s)
@@ -213,9 +247,9 @@ while(co < 27):
         user_agent = "/u/DateConvBot Converts Dates v0.1")
     # Iterating through our subs
     for mon_sub in MONITORED_SUBS:
-        print(mon_sub)
+        logger.debug(mon_sub)
         run_bot(r,mon_sub)
-        print("Done looping!")
+        logger.debug("Done looping!")
     # Take a break!
     time.sleep(60)
     co += 1
